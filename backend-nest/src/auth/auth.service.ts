@@ -1,29 +1,29 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 import type { RequestUser } from '../common/request-user';
-
-const SEEDED_USER: RequestUser & { password: string } = {
-  id: 'usr_intern_001',
-  name: 'Intern Candidate',
-  email: 'intern@spoton.test',
-  role: 'intern',
-  password: 'intern123',
-};
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwt: JwtService) {}
+  constructor(
+    private readonly jwt: JwtService,
+    private readonly config: ConfigService,
+  ) {}
 
-  login(email: string, password: string) {
-    if (email !== SEEDED_USER.email || password !== SEEDED_USER.password) {
+  async login(email: string, password: string) {
+    const seededEmail = this.config.getOrThrow<string>('USER_EMAIL');
+    const seededHash = this.config.getOrThrow<string>('USER_PASSWORD_HASH');
+
+    if (email !== seededEmail || !(await bcrypt.compare(password, seededHash))) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
     const user: RequestUser = {
-      id: SEEDED_USER.id,
-      name: SEEDED_USER.name,
-      email: SEEDED_USER.email,
-      role: SEEDED_USER.role,
+      id: this.config.getOrThrow<string>('USER_ID'),
+      name: this.config.getOrThrow<string>('USER_NAME'),
+      email: seededEmail,
+      role: this.config.getOrThrow<string>('USER_ROLE') as RequestUser['role'],
     };
 
     return {
