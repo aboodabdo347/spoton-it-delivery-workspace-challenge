@@ -6,8 +6,8 @@ import { api, saveToken } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('intern@spoton.test');
-  const [password, setPassword] = useState('intern123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
