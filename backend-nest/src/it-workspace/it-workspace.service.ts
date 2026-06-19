@@ -6,8 +6,12 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere } from 'typeorm';
 import { WorkItem, WorkItemStatus, WorkItemType, WorkItemPriority } from './work-item.entity';
+import { QaCheck, QaCheckStatus } from './qa-check.entity';
 import { CreateWorkItemDto } from './dto/create-work-item.dto';
 import { UpdateWorkItemDto } from './dto/update-work-item.dto';
+import { CreateQaCheckDto } from './dto/create-qa-check.dto';
+import { UpdateQaCheckDto } from './dto/update-qa-check.dto';
+import { ScoreService } from '../score/score.service';
 import type { RequestUser } from '../common/request-user';
 
 const ALLOWED_TRANSITIONS: Record<WorkItemStatus, WorkItemStatus[]> = {
@@ -24,7 +28,12 @@ export class ItWorkspaceService {
   constructor(
     @InjectRepository(WorkItem)
     private readonly workItemRepo: Repository<WorkItem>,
+    @InjectRepository(QaCheck)
+    private readonly qaCheckRepo: Repository<QaCheck>,
+    private readonly scoreService: ScoreService,
   ) {}
+
+  // --- Work Items ---
 
   async create(dto: CreateWorkItemDto, user: RequestUser): Promise<WorkItem> {
     const item = this.workItemRepo.create({
@@ -37,7 +46,11 @@ export class ItWorkspaceService {
       status: 'backlog' as WorkItemStatus,
       createdBy: user.id,
     });
-    return this.workItemRepo.save(item) as Promise<WorkItem>;
+    const saved = await this.workItemRepo.save(item) as WorkItem;
+
+    await this.scoreService.awardOnce(user.id, 'work_item_created', saved.id, 1);
+
+    return saved;
   }
 
   async findAll(query: {
@@ -80,12 +93,15 @@ export class ItWorkspaceService {
     return item;
   }
 
-  async update(id: string, dto: UpdateWorkItemDto): Promise<WorkItem> {
+  async update(id: string, dto: UpdateWorkItemDto, user: RequestUser): Promise<WorkItem> {
     const item = await this.findOne(id);
 
     const newStatus = dto.status as WorkItemStatus | undefined;
     if (newStatus && newStatus !== item.status) {
-      this.validateTransition(item.status, newStatus);
+      this.assertAllowedTransition(item.status, newStatus);
+      if (newStatus === 'ready_for_release') {
+        await this.assertQaReady(id);
+      }
     }
 
     if (dto.title !== undefined) item.title = dto.title;
@@ -96,11 +112,22 @@ export class ItWorkspaceService {
     if (dto.dueDate !== undefined) item.dueDate = dto.dueDate ?? null;
     if (newStatus !== undefined) item.status = newStatus;
 
-    return this.workItemRepo.save(item) as Promise<WorkItem>;
+    const saved = await this.workItemRepo.save(item) as WorkItem;
+
+    // Award score for meaningful status transitions
+    if (newStatus === 'qa') {
+      await this.scoreService.awardOnce(user.id, 'work_item_moved_to_qa', id, 1);
+    }
+    if (newStatus === 'ready_for_release') {
+      await this.scoreService.awardOnce(user.id, 'work_item_ready_for_release', id, 2);
+    }
+
+    return saved;
   }
 
   async remove(id: string): Promise<void> {
     const item = await this.findOne(id);
+    await this.qaCheckRepo.delete({ workItemId: id });
     await this.workItemRepo.remove(item);
   }
 
@@ -132,12 +159,86 @@ export class ItWorkspaceService {
       .execute();
   }
 
-  private validateTransition(from: WorkItemStatus, to: WorkItemStatus): void {
+  // --- QA Checks ---
+
+  async createQaCheck(workItemId: string, dto: CreateQaCheckDto): Promise<QaCheck> {
+    await this.findOne(workItemId);
+    const check = this.qaCheckRepo.create({
+      workItemId,
+      testTitle: dto.testTitle,
+      expectedResult: dto.expectedResult,
+      actualResult: dto.actualResult ?? null,
+      status: 'pending' as QaCheckStatus,
+      tester: dto.tester ?? null,
+      notes: dto.notes ?? null,
+    });
+    return this.qaCheckRepo.save(check) as Promise<QaCheck>;
+  }
+
+  async listQaChecks(workItemId: string): Promise<QaCheck[]> {
+    await this.findOne(workItemId);
+    return this.qaCheckRepo.find({
+      where: { workItemId },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async updateQaCheck(checkId: string, dto: UpdateQaCheckDto, user: RequestUser): Promise<QaCheck> {
+    const check = await this.qaCheckRepo.findOne({ where: { id: checkId } });
+    if (!check) throw new NotFoundException(`QA check ${checkId} not found`);
+
+    const wasNotPassed = check.status !== 'passed';
+
+    if (dto.testTitle !== undefined) check.testTitle = dto.testTitle;
+    if (dto.expectedResult !== undefined) check.expectedResult = dto.expectedResult;
+    if (dto.actualResult !== undefined) check.actualResult = dto.actualResult ?? null;
+    if (dto.status !== undefined) check.status = dto.status as QaCheckStatus;
+    if (dto.tester !== undefined) check.tester = dto.tester ?? null;
+    if (dto.notes !== undefined) check.notes = dto.notes ?? null;
+
+    const saved = await this.qaCheckRepo.save(check) as QaCheck;
+
+    // Award once when a check transitions to passed for the first time
+    if (wasNotPassed && dto.status === 'passed') {
+      await this.scoreService.awardOnce(user.id, 'qa_check_passed', checkId, 1);
+    }
+
+    return saved;
+  }
+
+  async removeQaCheck(checkId: string): Promise<void> {
+    const check = await this.qaCheckRepo.findOne({ where: { id: checkId } });
+    if (!check) throw new NotFoundException(`QA check ${checkId} not found`);
+    await this.qaCheckRepo.remove(check);
+  }
+
+  // --- Private helpers ---
+
+  private assertAllowedTransition(from: WorkItemStatus, to: WorkItemStatus): void {
     const allowed = ALLOWED_TRANSITIONS[from];
     if (!allowed.includes(to)) {
       throw new BadRequestException(
         `Cannot move work item from '${from}' to '${to}'. ` +
           `Allowed next states: [${allowed.join(', ') || 'none'}].`,
+      );
+    }
+  }
+
+  private async assertQaReady(workItemId: string): Promise<void> {
+    const checks = await this.qaCheckRepo.find({ where: { workItemId } });
+
+    if (checks.length === 0) {
+      throw new BadRequestException(
+        'Work item cannot be marked ready for release: no QA checks exist. ' +
+          'Add at least one QA check and mark it passed.',
+      );
+    }
+
+    const notPassed = checks.filter((c) => c.status !== 'passed');
+    if (notPassed.length > 0) {
+      throw new BadRequestException(
+        `Work item cannot be marked ready for release: ` +
+          `${notPassed.length} QA check(s) are not passed (${notPassed.map((c) => `"${c.testTitle}": ${c.status}`).join(', ')}).`,
       );
     }
   }

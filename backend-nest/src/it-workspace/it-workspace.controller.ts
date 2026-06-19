@@ -17,6 +17,8 @@ import type { RequestUser } from '../common/request-user';
 import { ItWorkspaceService } from './it-workspace.service';
 import { CreateWorkItemDto } from './dto/create-work-item.dto';
 import { UpdateWorkItemDto } from './dto/update-work-item.dto';
+import { CreateQaCheckDto } from './dto/create-qa-check.dto';
+import { UpdateQaCheckDto } from './dto/update-qa-check.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('it-workspace')
@@ -63,13 +65,47 @@ export class ItWorkspaceController {
   }
 
   @Patch('work-items/:id')
-  updateWorkItem(@Param('id') id: string, @Body() dto: UpdateWorkItemDto) {
-    return this.workspace.update(id, dto);
+  updateWorkItem(
+    @Param('id') id: string,
+    @Body() dto: UpdateWorkItemDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.workspace.update(id, dto, user);
   }
 
   @Delete('work-items/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteWorkItem(@Param('id') id: string) {
     return this.workspace.remove(id);
+  }
+
+  // --- QA Checks ---
+
+  @Post('work-items/:workItemId/qa-checks')
+  createQaCheck(
+    @Param('workItemId') workItemId: string,
+    @Body() dto: CreateQaCheckDto,
+  ) {
+    return this.workspace.createQaCheck(workItemId, dto);
+  }
+
+  @Get('work-items/:workItemId/qa-checks')
+  listQaChecks(@Param('workItemId') workItemId: string) {
+    return this.workspace.listQaChecks(workItemId);
+  }
+
+  @Patch('qa-checks/:checkId')
+  updateQaCheck(
+    @Param('checkId') checkId: string,
+    @Body() dto: UpdateQaCheckDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.workspace.updateQaCheck(checkId, dto, user);
+  }
+
+  @Delete('qa-checks/:checkId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeQaCheck(@Param('checkId') checkId: string) {
+    return this.workspace.removeQaCheck(checkId);
   }
 }
