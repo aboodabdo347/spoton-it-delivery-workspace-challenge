@@ -455,7 +455,7 @@ Submit a GitHub repository link or pull request link.
 
 Your submission should include:
 
-- [ ] working setup instructions
+- [x] working setup instructions
 - [ ] short demo video, 3-5 minutes
 - [ ] `AI_USAGE.md`
 - [ ] `PROMPT_LOG.md`
