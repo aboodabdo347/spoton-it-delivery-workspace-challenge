@@ -9,6 +9,7 @@ import { ScoreController } from './score/score.controller';
 import { ScoreService } from './score/score.service';
 import { ItWorkspaceController } from './it-workspace/it-workspace.controller';
 import { ItWorkspaceService } from './it-workspace/it-workspace.service';
+import { WorkItem } from './it-workspace/work-item.entity';
 import { JwtAuthGuard } from './common/jwt-auth.guard';
 
 @Module({
@@ -26,10 +27,11 @@ import { JwtAuthGuard } from './common/jwt-auth.guard';
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // auto-creates tables in dev; replace with migrations before prod
+        synchronize: true,
         logging: false,
       }),
     }),
+    TypeOrmModule.forFeature([WorkItem]),
   ],
   controllers: [HealthController, AuthController, ScoreController, ItWorkspaceController],
   providers: [AuthService, ScoreService, ItWorkspaceService, JwtAuthGuard],
