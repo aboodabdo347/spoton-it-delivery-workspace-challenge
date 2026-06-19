@@ -10,6 +10,11 @@ import { ScoreService } from './score/score.service';
 import { ItWorkspaceController } from './it-workspace/it-workspace.controller';
 import { ItWorkspaceService } from './it-workspace/it-workspace.service';
 import { WorkItem } from './it-workspace/work-item.entity';
+import { QaCheck } from './it-workspace/qa-check.entity';
+import { ReleaseController } from './releases/release.controller';
+import { ReleaseService } from './releases/release.service';
+import { Release } from './releases/release.entity';
+import { ScoreEvent } from './score/score-event.entity';
 import { JwtAuthGuard } from './common/jwt-auth.guard';
 
 @Module({
@@ -31,9 +36,9 @@ import { JwtAuthGuard } from './common/jwt-auth.guard';
         logging: false,
       }),
     }),
-    TypeOrmModule.forFeature([WorkItem]),
+    TypeOrmModule.forFeature([WorkItem, QaCheck, Release, ScoreEvent]),
   ],
-  controllers: [HealthController, AuthController, ScoreController, ItWorkspaceController],
-  providers: [AuthService, ScoreService, ItWorkspaceService, JwtAuthGuard],
+  controllers: [HealthController, AuthController, ScoreController, ItWorkspaceController, ReleaseController],
+  providers: [AuthService, ScoreService, ItWorkspaceService, ReleaseService, JwtAuthGuard],
 })
 export class AppModule {}
