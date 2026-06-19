@@ -457,12 +457,12 @@ Your submission should include:
 
 - [x] working setup instructions
 - [ ] short demo video, 3-5 minutes
-- [ ] `AI_USAGE.md`
-- [ ] `PROMPT_LOG.md`
-- [ ] `DECISIONS.md`
-- [ ] tests added and commands run
-- [ ] known limitations or unfinished levels
-- [ ] no committed secrets
+- [x] `AI_USAGE.md`
+- [x] `PROMPT_LOG.md`
+- [x] `DECISIONS.md`
+- [x] tests added and commands run
+- [x] known limitations or unfinished levels
+- [x] no committed secrets
 
 ## Demo Video Guide
 
