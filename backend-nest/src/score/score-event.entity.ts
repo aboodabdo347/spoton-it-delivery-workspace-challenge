@@ -10,20 +10,20 @@ import {
 @Unique(['userId', 'action', 'entityId'])
 export class ScoreEvent {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'varchar', length: 200 })
-  userId: string;
+  userId!: string;
 
   @Column({ type: 'varchar', length: 100 })
-  action: string;
+  action!: string;
 
   @Column({ type: 'varchar', length: 200 })
-  entityId: string;
+  entityId!: string;
 
   @Column({ type: 'integer' })
-  points: number;
+  points!: number;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }
