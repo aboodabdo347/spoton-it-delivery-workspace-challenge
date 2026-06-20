@@ -78,7 +78,7 @@ export default function WorkItemDetailPage({ params }: { params: Promise<{ id: s
   const [qaError, setQaError] = useState('');
   const [showAddCheck, setShowAddCheck] = useState(false);
   const [addingCheck, setAddingCheck] = useState(false);
-  const [newCheck, setNewCheck] = useState({ testTitle: '', expectedResult: '', tester: '', notes: '' });
+  const [newCheck, setNewCheck] = useState({ testTitle: '', expectedResult: '', actualResult: '', tester: '', notes: '' });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -152,11 +152,12 @@ export default function WorkItemDetailPage({ params }: { params: Promise<{ id: s
       const check = await api.createQaCheck(id, {
         testTitle: newCheck.testTitle.trim(),
         expectedResult: newCheck.expectedResult.trim(),
+        actualResult: newCheck.actualResult.trim(),
         tester: newCheck.tester.trim() || undefined,
         notes: newCheck.notes.trim() || undefined,
       });
       setQaChecks((prev) => [...prev, check]);
-      setNewCheck({ testTitle: '', expectedResult: '', tester: '', notes: '' });
+      setNewCheck({ testTitle: '', expectedResult: '', actualResult: '', tester: '', notes: '' });
       setShowAddCheck(false);
     } catch (e) {
       setQaError(e instanceof Error ? e.message : 'Failed to add QA check');
@@ -372,6 +373,12 @@ export default function WorkItemDetailPage({ params }: { params: Promise<{ id: s
                   <label>Expected Result *</label>
                   <textarea required rows={2} placeholder="Describe the expected behavior"
                     value={newCheck.expectedResult} onChange={(e) => setNewCheck((n) => ({ ...n, expectedResult: e.target.value }))}
+                    style={{ border: '1px solid var(--line)', borderRadius: 8, padding: 10, font: 'inherit', resize: 'vertical' }} />
+                </div>
+                <div className="field">
+                  <label>Actual Result *</label>
+                  <textarea required rows={2} placeholder="What actually happened"
+                    value={newCheck.actualResult} onChange={(e) => setNewCheck((n) => ({ ...n, actualResult: e.target.value }))}
                     style={{ border: '1px solid var(--line)', borderRadius: 8, padding: 10, font: 'inherit', resize: 'vertical' }} />
                 </div>
                 <div className="field">
