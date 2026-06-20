@@ -456,7 +456,7 @@ Submit a GitHub repository link or pull request link.
 Your submission should include:
 
 - [x] working setup instructions
-- [ ] short demo video, 3-5 minutes
+- [x] short demo video, 3-5 minutes
 - [x] `AI_USAGE.md`
 - [x] `PROMPT_LOG.md`
 - [x] `DECISIONS.md`
@@ -464,19 +464,9 @@ Your submission should include:
 - [x] known limitations or unfinished levels
 - [x] no committed secrets
 
-## Demo Video Guide
+## Demo Video
 
-In your demo, show:
-
-1. Login.
-2. Create a work item.
-3. Move it through at least part of the workflow.
-4. Show QA behavior if implemented.
-5. Show release behavior if implemented.
-6. Show score behavior if implemented.
-7. Show your creative feature if implemented.
-8. Mention what you would improve next.
-
+[![Watch Demo](https://img.shields.io/badge/▶%20Watch%20Demo-Google%20Drive-4285F4?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1uBJqFfb7zqKhoA3VR4AaP1MLklUlWeiV/view?usp=sharing)
 ## What We Value
 
 We value:
