@@ -22,7 +22,7 @@ Created `score-event.entity.ts` with `@Unique(['userId', 'action', 'entityId'])`
 Ran `tsc --noEmit` on backend — zero errors. Idempotency verified by logic: `awardOnce` finds existing row → returns early; if not found → inserts. Second deploy is blocked by `ConflictException` before `awardOnce` is reached, so deploy points can't be double-awarded regardless. QA check passed points use the DB-level unique constraint as a secondary safety net.
 
 ### Related Commit
-None
+errors fixed in score-event.entity
 
 ---
 
@@ -55,7 +55,7 @@ Created `releases/release.entity.ts` using a JSON value transformer for `linkedW
 Ran `tsc --noEmit` on both backend and frontend — zero errors. Verified idempotency guard: `ConflictException` on second deploy attempt. Verified non-ready item rejection message includes item title and current status. Verified `markAsReleased` is called after status is saved (not before) to prevent partial state on DB error.
 
 ### Related Commit
-None
+add the releases section
 
 ---
 
@@ -84,7 +84,7 @@ Created `qa-check.entity.ts` (id, workItemId, testTitle, expectedResult, actualR
 Ran `tsc --noEmit` on both backend and frontend — zero errors in both. Verified the `assertQaReady` logic: zero checks → blocked, any non-passed check → blocked with specific check names in the error message. Frontend shows inline readiness hint ("2/3 QA checks passed") and locks the button before the backend even rejects the request.
 
 ### Related Commit
-None
+finish it-workspace page
 
 ---
 
@@ -110,7 +110,7 @@ Updated `api.ts` with proper `WorkItem`, `CreateWorkItemPayload`, `UpdateWorkIte
 Ran `tsc --noEmit` on frontend — zero errors. Verified page structure matches existing design system CSS classes (`card`, `button`, `badge`, `table`, `page-header`, `eyebrow`).
 
 ### Related Commit
-None
+finish Work Items content in backend 
 
 ---
 
@@ -137,7 +137,7 @@ Created `work-item.entity.ts` with explicit TypeORM column types to avoid metada
 Ran `tsc --noEmit` — zero errors. Started backend and confirmed all 5 work item routes mapped and `Nest application successfully started` with no DB errors. Verified `work_items` table is auto-created by TypeORM synchronize.
 
 ### Related Commit
-None
+finish new work item page
 
 ---
 
@@ -161,7 +161,7 @@ Installed `@nestjs/typeorm`, `typeorm`, `@nestjs/config`. Created `backend-nest/
 Confirmed backend startup log shows `TypeOrmCoreModule dependencies initialized` and `Nest application successfully started` with no connection errors. Checked that Docker PostgreSQL container was running before test.
 
 ### Related Commit
-None
+db connection is done
 
 ---
 
